@@ -36,7 +36,7 @@ def generate(cfd, word='the', num=50):
     sonnet = []
     sentence = []
     for i in xrange(num):
-        arr = []  # make an array with the words shown by proper count
+        arr = []  # TODO: clean this up
         for j in cfd[word]:
             for k in xrange(cfd[word][j]):
                 arr.append(j)
@@ -46,7 +46,7 @@ def generate(cfd, word='the', num=50):
 
         if (i + 1) % 6 == 0:
             sentence = ' '.join(sentence)
-            # sentence = ''.join([sonnet[-1][0].upper()] + sonnet[-1][1:])
+            sentence = sentence[0].upper() + sentence[1:]
             sonnet.append(sentence)
             sentence = []
     return sonnet
