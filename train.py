@@ -1,6 +1,7 @@
 import argparse
 import cPickle as pickle
 import nltk.tokenize
+import numpy as np
 import random
 from bs4 import BeautifulSoup
 from glob import glob
@@ -39,13 +40,12 @@ def generate(cfd, word, num=50):
     sonnet = []
     sentence = []
     for i in xrange(num):
-        arr = []  # TODO: clean this up
-        for j in cfd[word]:
-            for k in xrange(cfd[word][j]):
-                arr.append(j)
-
         sentence.append(word)
-        word = arr[int((len(arr)) * random.random())]
+
+        words, frequencies = zip(*cfd[word].items())
+        frequencies = np.array(frequencies)
+
+        word = np.random.choice(words, p=frequencies / float(frequencies.sum()))
 
         if (i + 1) % 6 == 0:
             sentence = ' '.join(sentence)
