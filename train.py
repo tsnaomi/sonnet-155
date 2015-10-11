@@ -62,9 +62,10 @@ def train(start_word=None):
 
     sonnet = generate(cfd, word=start_word if start_word else random.choice(tokens))
 
-    print '\n\n' + ('-' * max(len(line) for line in sonnet))
+    div = '-' * max(len(line) for line in sonnet)
+    print '\n\n' + div
     print ',\n'.join(sonnet)
-    print ('-' * max(len(line) for line in sonnet)) + '\n\n'
+    print div + '\n\n'
 
 
 if __name__ == '__main__':
