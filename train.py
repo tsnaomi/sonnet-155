@@ -1,30 +1,33 @@
+import argparse
+import cPickle as pickle
 import nltk.tokenize
 import random
-import cPickle as pickle
-from glob import glob
 from bs4 import BeautifulSoup
-from nltk.corpus import cmudict
+from glob import glob
 
 FILTERED_CHARS = {'.', ',', '!', ':', ';', '?'}
 
-try:
-    sonnets = pickle.load(open('sonnets.pickle'))
-    print 'Loaded sonnets.pickle'
-except:
-    sonnets = []
 
-    for f in glob('corpus/*.html'):
-        print 'Reading file', f
-        parser = BeautifulSoup(open(f).read(), 'lxml')
-        sonnet = parser.find(id='sonnet').find('p').text.lower()
+def fetch_corpus():
+    try:
+        sonnets = pickle.load(open('sonnets.pickle', 'rb'))
+        print 'Loaded sonnets.pickle'
+    except IOError:
+        sonnets = []
 
-        tokens = nltk.tokenize.wordpunct_tokenize(sonnet)
-        filtered = [''.join([w for w in sentence if w not in FILTERED_CHARS]) for sentence in tokens]
-        filtered = filter(lambda w: w, filtered)
-        sonnets.append(filtered)
+        for f in glob('corpus/*.html'):
+            print 'Reading file', f
+            parser = BeautifulSoup(open(f).read(), 'lxml')
+            sonnet = parser.find(id='sonnet').find('p').text.lower()
 
-    print 'Read %d sonnets' % len(sonnets)
-    pickle.dump(sonnets, open('sonnets.pickle', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+            tokens = nltk.tokenize.wordpunct_tokenize(sonnet)
+            filtered = [''.join([w for w in sentence if w not in FILTERED_CHARS]) for sentence in tokens]
+            filtered = filter(lambda w: w, filtered)
+            sonnets.append(filtered)
+
+        print 'Read %d sonnets' % len(sonnets)
+        pickle.dump(sonnets, open('sonnets.pickle', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+    return sonnets
 
 
 def ngrams(corpus, n=2):
@@ -32,7 +35,7 @@ def ngrams(corpus, n=2):
         yield tuple(map(lambda s: s.lower(), corpus[i:i + n]))
 
 
-def generate(cfd, word='the', num=50):
+def generate(cfd, word, num=50):
     sonnet = []
     sentence = []
     for i in xrange(num):
@@ -51,9 +54,21 @@ def generate(cfd, word='the', num=50):
             sentence = []
     return sonnet
 
-tokens = sum(sonnets, [])
-cfd = nltk.ConditionalFreqDist(ngrams(tokens))
-print '\n\n'
-sonnet = generate(cfd, word=random.choice(tokens))
-print ',\n'.join(sonnet)
-print '\n\n'
+
+def train(start_word=None):
+    sonnets = fetch_corpus()
+    tokens = sum(sonnets, [])
+    cfd = nltk.ConditionalFreqDist(ngrams(tokens))
+
+    sonnet = generate(cfd, word=start_word if start_word else random.choice(tokens))
+
+    print '\n\n' + ('-' * max(len(line) for line in sonnet))
+    print ',\n'.join(sonnet)
+    print ('-' * max(len(line) for line in sonnet)) + '\n\n'
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generate a sonnet.')
+    parser.add_argument('--start', help='A starting token to init the algorithm', default=None)
+    args = parser.parse_args()
+    train(args.start)
