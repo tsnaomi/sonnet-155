@@ -52,33 +52,46 @@ def check_rhyme(a, b):
         return False
 
 
+def validate_sonnet_rhyming(lines):
+    return all(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:]))
+
+
+def to_properly_cased_string(words):
+    sentence = ' '.join(words)
+    sentence = sentence[0].upper() + sentence[1:]
+    return sentence
+
+
+def to_properly_cased_sonnet(sentences):
+    return map(to_properly_cased_string, sentences)
+
+
 def generate(cfd, word, num=50):
-    sonnet = []
-    sentence = []
-    for i in xrange(num):
-        sentence.append(word)
+    MAX_ATTEMPTS = 1000
+    attempts = 0
+    while attempts < MAX_ATTEMPTS:
+        attempts += 1
 
-        words, frequencies = zip(*cfd[word].items())
-        frequencies = np.array(frequencies)
+        sonnet = []
+        sentence = []
+        for i in xrange(num):
+            sentence.append(word)
 
-        attempts = 0
-        while attempts < 1000:
+            words, frequencies = zip(*cfd[word].items())
+            frequencies = np.array(frequencies)
+
             word = np.random.choice(words, p=frequencies / float(frequencies.sum()))
-            attempts += 1
-            if len(sonnet) == 0 or (i + 1) % 6 != 0:
-                # no need to enforce rhyming on first sentence or non-final words
-                break
-            if check_rhyme(sonnet[-1][-1], word):
-                break
-        else:
-            print 'Warning: word "%s" on line %d won\'t rhyme' % (word, len(sonnet))
 
-        if (i + 1) % 6 == 0:
-            sentence = ' '.join(sentence)
-            sentence = sentence[0].upper() + sentence[1:]
-            sonnet.append(sentence)
-            sentence = []
-    return sonnet
+            if (i + 1) % 6 == 0:
+                sonnet.append(sentence)
+                sentence = []
+        if not validate_sonnet_rhyming(sonnet):
+            continue
+        print 'Generated sonnet in %d attempts' % attempts
+        return sonnet
+    else:
+        print 'Warning: rhyming scheme will be broken (%d attempts)' % MAX_ATTEMPTS
+        return sonnet
 
 
 def train(start_word=None):
@@ -87,6 +100,7 @@ def train(start_word=None):
     cfd = nltk.ConditionalFreqDist(ngrams(tokens))
 
     sonnet = generate(cfd, word=start_word if start_word else random.choice(tokens))
+    sonnet = to_properly_cased_sonnet(sonnet)
 
     div = '-' * max(len(line) for line in sonnet)
     print '\n\n' + div
