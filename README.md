@@ -13,10 +13,16 @@ cd corpus
 ## Install requirements
 ```bash
 pip install -r requirements.txt
+# download cmudict
+python -c 'import nltk; nltk.download()'
+# verify
+python -c 'from nltk.corpus import cmudict; cmudict.ensure_loaded()'
 ```
 
 ## Verify unit tests pass
-Kidding
+```bash
+py.test
+```
 
 ## Run
 ```bash
