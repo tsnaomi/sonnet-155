@@ -26,7 +26,7 @@ py.test
 
 ## Run
 ```bash
-python train.py
+python sonnet.py
 ```
 ```
 Still shine bright in his blood,
