@@ -11,11 +11,11 @@ class TestSonnet(object):
 
     def test_multi_line_rhyming(self):
         assert not sonnet.validate_sonnet_rhyming([
-            'unique new york',
-            'how now brown cow'
+            'unique new york'.split(),
+            'how now brown cow'.split()
         ])
 
         assert sonnet.validate_sonnet_rhyming([
-            'rhyming scheme',
-            'steel beam'
+            'rhyming scheme'.split(),
+            'steel beam'.split()
         ])
