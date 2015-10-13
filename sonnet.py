@@ -12,6 +12,7 @@ from nltk.corpus import cmudict
 FILTERED_CHARS = {'.', ',', '!', ':', ';', '?'}
 RHYMABLE_SET = set(string.ascii_letters + "'")
 MAX_ATTEMPTS = 1000
+CORPUS_CACHE_PATH = 'sonnets.v2.pickle'
 
 # Corresponds to index pairs with matching rhyming for
 # abab-cdcd-efef-gg
@@ -33,24 +34,25 @@ cmudict_loaded = cmudict.dict()
 
 def fetch_corpus():
     try:
-        sonnets = pickle.load(open('sonnets.pickle', 'rb'))
-        print 'Loaded sonnets.pickle'
+        sonnets = pickle.load(open(CORPUS_CACHE_PATH, 'rb'))
+        print 'Loaded', CORPUS_CACHE_PATH
     except IOError:
         sonnets = []
 
+        valid = set(RHYMABLE_SET)
+        valid.add('\n')
+        valid.add(' ')
+
         for f in glob('corpus/*.html'):
             print 'Reading file', f
-            parser = BeautifulSoup(open(f).read(), 'lxml')
-            sonnet = parser.find(id='sonnet').find('p').text.lower()
+            parser = BeautifulSoup(open(f).read())
+            text = parser.find(id='sonnet').find('p').text.lower()
 
-            tokens = nltk.tokenize.wordpunct_tokenize(sonnet)
-            # TODO: this is broken
-            filtered = [''.join([w for w in sentence if w not in FILTERED_CHARS]) for sentence in tokens]
-            filtered = filter(lambda w: w, filtered)
-            sonnets.append(filtered)
+            tokens = filter(lambda c: c in valid, text).split()
+            sonnets.append(tokens)
 
         print 'Read %d sonnets' % len(sonnets)
-        pickle.dump(sonnets, open('sonnets.pickle', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(sonnets, open(CORPUS_CACHE_PATH, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
     return sonnets
 
 
