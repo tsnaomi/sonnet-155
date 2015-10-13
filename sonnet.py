@@ -16,6 +16,20 @@ FILTERED_CHARS = {'.', ',', '!', ':', ';', '?'}
 MAX_ATTEMPTS = 1000
 
 
+# Corresponds to index pairs/sets with matching rhyming for
+# abab-cdcd-efef-gg
+# 0101-2323-4545-66
+RHYMING_SCHEME = [
+    (0, 2),
+    (1, 3),
+    (4, 6),
+    (5, 7),
+    (8, 10),
+    (9, 11),
+    (12, 13),
+]
+
+
 def fetch_corpus():
     try:
         sonnets = pickle.load(open('sonnets.pickle', 'rb'))
@@ -54,7 +68,7 @@ def check_rhyme(a, b):
 
 
 def sonnet_rhyming_score(lines):
-    return sum(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:])) / float(len(lines))
+    return sum(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:])) / float(len(lines) - 1)
 
 
 def to_properly_cased_string(words):
