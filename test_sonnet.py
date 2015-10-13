@@ -1,4 +1,5 @@
 import sonnet
+import pytest
 
 
 class TestSonnet(object):
@@ -17,22 +18,29 @@ But if that flower with base infection meet,
 The basest weed outbraves his dignity:
 For sweetest things turn sourest by their deeds,
 Lilies that fester, smell far worse than weeds.
-""".lower().splitlines(False)
+"""
 
     def test_rhyming(self):
         assert sonnet.check_rhyme('cool', 'fool')
         assert sonnet.check_rhyme('cat', 'hat')
+        assert sonnet.check_rhyme("cat's", 'hats')
+        assert sonnet.check_rhyme('cats.', "...hats!?")
+
+        assert not sonnet.check_rhyme('cats', 'pajamas')
+        assert not sonnet.check_rhyme("cat's", 'pajamas')
+
         assert not sonnet.check_rhyme('cool', 'beans')
         assert sonnet.check_rhyme('fortuitous', 'conspicuous')
         assert not sonnet.check_rhyme('fabulous', 'cat')
 
     def test_multi_line_rhyming(self):
-        assert sonnet.sonnet_rhyming_score([
-            'unique new york'.split(),
-            'how now brown cow'.split()
-        ]) == 0.0
+        assert sonnet.sonnet_rhyming_score('ababcdcdefefgg') == 1.0
+        assert sonnet.sonnet_rhyming_score('ababcdcdefefeg') == 11. / 12.
 
-        assert sonnet.sonnet_rhyming_score([
-            'rhyming scheme'.split(),
-            'steel beam'.split()
-        ]) == 1.0
+        assert sonnet.sonnet_rhyming_score(
+            map(lambda s: s.split(), self.ACTUAL_SHAKESPEARE.lower().splitlines(False))) == 1.0
+
+    @pytest.mark.skipif(reason='TODO')
+    def test_syllables(self):
+        assert sonnet.num_syllables('cat in the hat'.split()) == 4
+        assert sonnet.num_syllables('luxurious bat demon calipers'.split()) == 10

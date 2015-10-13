@@ -3,20 +3,17 @@ import cPickle as pickle
 import nltk.tokenize
 import numpy as np
 import random
+import string
 from bs4 import BeautifulSoup
 from glob import glob
 from nltk.corpus import cmudict
 
 
-print 'Loading CMU dictionary...'
-cmudict.ensure_loaded()
-cmudict_loaded = cmudict.dict()
-
 FILTERED_CHARS = {'.', ',', '!', ':', ';', '?'}
+RHYMABLE_SET = set(string.ascii_letters + "'")
 MAX_ATTEMPTS = 1000
 
-
-# Corresponds to index pairs/sets with matching rhyming for
+# Corresponds to index pairs with matching rhyming for
 # abab-cdcd-efef-gg
 # 0101-2323-4545-66
 RHYMING_SCHEME = [
@@ -28,6 +25,10 @@ RHYMING_SCHEME = [
     (9, 11),
     (12, 13),
 ]
+
+print 'Loading CMU dictionary...'
+cmudict.ensure_loaded()
+cmudict_loaded = cmudict.dict()
 
 
 def fetch_corpus():
@@ -43,6 +44,7 @@ def fetch_corpus():
             sonnet = parser.find(id='sonnet').find('p').text.lower()
 
             tokens = nltk.tokenize.wordpunct_tokenize(sonnet)
+            # TODO: this is broken
             filtered = [''.join([w for w in sentence if w not in FILTERED_CHARS]) for sentence in tokens]
             filtered = filter(lambda w: w, filtered)
             sonnets.append(filtered)
@@ -57,9 +59,16 @@ def ngrams(corpus, n=2):
         yield tuple(map(lambda s: s.lower(), corpus[i:i + n]))
 
 
+def clean_token(s):
+    return filter(lambda c: c in RHYMABLE_SET, s.lower())
+
+
 # TODO: only rhymes on the last two "sounds" (not sure of the jargon)
 # TODO: only checks the first pronunciation
 def check_rhyme(a, b):
+    a = clean_token(a)
+    b = clean_token(b)
+
     try:
         return tuple(w[0] for w in cmudict_loaded[a][0])[-2:] == tuple(w[0] for w in cmudict_loaded[b][0])[-2:]
     except KeyError:
@@ -68,7 +77,8 @@ def check_rhyme(a, b):
 
 
 def sonnet_rhyming_score(lines):
-    return sum(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:])) / float(len(lines) - 1)
+    assert len(lines) == 14
+    return sum(check_rhyme(lines[a][-1], lines[b][-1]) for a, b in RHYMING_SCHEME) / float(len(lines) - 1)
 
 
 def to_properly_cased_string(words):
@@ -87,19 +97,24 @@ def sample_word_from_cfd(cfd, word):
     return np.random.choice(words, p=frequencies / float(frequencies.sum()))
 
 
-def generate(cfd, word, num=50):
+# TODO
+def num_syllables(sentence):
+    return 0
+
+
+def generate(cfd, word, lines=14):
     best = None
     best_score = -1
 
     for attempt in xrange(1, MAX_ATTEMPTS + 1):
         sonnet = []
         sentence = []
-        for i in xrange(num):
+        while lines > len(sonnet):
             sentence.append(word)
 
             word = sample_word_from_cfd(cfd, word)
 
-            if (i + 1) % 6 == 0:
+            if len(sentence) % 6 == 0:
                 sonnet.append(sentence)
                 sentence = []
 
@@ -107,6 +122,8 @@ def generate(cfd, word, num=50):
         if best_score < score:
             best_score = score
             best = sonnet
+        if best_score == 1.0:
+            break
 
     print 'Generated a sonnet with score %.2f in %d attempts' % (best_score, attempt)
     return best
