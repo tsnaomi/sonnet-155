@@ -13,6 +13,7 @@ cmudict.ensure_loaded()
 cmudict_loaded = cmudict.dict()
 
 FILTERED_CHARS = {'.', ',', '!', ':', ';', '?'}
+MAX_ATTEMPTS = 1000
 
 
 def fetch_corpus():
@@ -52,8 +53,8 @@ def check_rhyme(a, b):
         return False
 
 
-def validate_sonnet_rhyming(lines):
-    return all(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:]))
+def sonnet_rhyming_score(lines):
+    return sum(check_rhyme(a[-1], b[-1]) for a, b in zip(lines[:-1], lines[1:])) / float(len(lines))
 
 
 def to_properly_cased_string(words):
@@ -66,32 +67,35 @@ def to_properly_cased_sonnet(sentences):
     return map(to_properly_cased_string, sentences)
 
 
-def generate(cfd, word, num=50):
-    MAX_ATTEMPTS = 1000
-    attempts = 0
-    while attempts < MAX_ATTEMPTS:
-        attempts += 1
+def sample_word_from_cfd(cfd, word):
+    words, frequencies = zip(*cfd[word].items())
+    frequencies = np.array(frequencies)
+    return np.random.choice(words, p=frequencies / float(frequencies.sum()))
 
+
+def generate(cfd, word, num=50):
+    best = None
+    best_score = -1
+
+    for attempt in xrange(1, MAX_ATTEMPTS + 1):
         sonnet = []
         sentence = []
         for i in xrange(num):
             sentence.append(word)
 
-            words, frequencies = zip(*cfd[word].items())
-            frequencies = np.array(frequencies)
-
-            word = np.random.choice(words, p=frequencies / float(frequencies.sum()))
+            word = sample_word_from_cfd(cfd, word)
 
             if (i + 1) % 6 == 0:
                 sonnet.append(sentence)
                 sentence = []
-        if not validate_sonnet_rhyming(sonnet):
-            continue
-        print 'Generated sonnet in %d attempts' % attempts
-        return sonnet
-    else:
-        print 'Warning: rhyming scheme will be broken (%d attempts)' % MAX_ATTEMPTS
-        return sonnet
+
+        score = sonnet_rhyming_score(sonnet)
+        if best_score < score:
+            best_score = score
+            best = sonnet
+
+    print 'Generated a sonnet with score %.2f in %d attempts' % (best_score, attempt)
+    return best
 
 
 def train(start_word=None):

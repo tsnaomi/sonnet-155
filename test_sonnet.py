@@ -10,12 +10,12 @@ class TestSonnet(object):
         assert not sonnet.check_rhyme('fabulous', 'cat')
 
     def test_multi_line_rhyming(self):
-        assert not sonnet.validate_sonnet_rhyming([
+        assert not sonnet.sonnet_rhyming_score([
             'unique new york'.split(),
             'how now brown cow'.split()
         ])
 
-        assert sonnet.validate_sonnet_rhyming([
+        assert sonnet.sonnet_rhyming_score([
             'rhyming scheme'.split(),
             'steel beam'.split()
         ])
