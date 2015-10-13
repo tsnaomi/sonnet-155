@@ -63,7 +63,6 @@ def clean_token(s):
     return filter(lambda c: c in RHYMABLE_SET, s.lower())
 
 
-# TODO: only rhymes on the last two "sounds" (not sure of the jargon)
 # TODO: only checks the first pronunciation
 def check_rhyme(a, b):
     a = clean_token(a)
@@ -78,7 +77,9 @@ def check_rhyme(a, b):
 
 def sonnet_rhyming_score(lines):
     assert len(lines) == 14
-    return sum(check_rhyme(lines[a][-1], lines[b][-1]) for a, b in RHYMING_SCHEME) / float(len(lines) - 1)
+    # for a, b in RHYMING_SCHEME:
+    #     print a, b, lines[a][-1], lines[b][-1], check_rhyme(lines[a][-1], lines[b][-1])
+    return sum(check_rhyme(lines[a][-1], lines[b][-1]) for a, b in RHYMING_SCHEME) / float(len(RHYMING_SCHEME))
 
 
 def to_properly_cased_string(words):
